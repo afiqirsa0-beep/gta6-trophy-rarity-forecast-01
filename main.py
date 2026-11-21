@@ -24,7 +24,10 @@ SLOPE_DAMP = 0.85  # growth slows as the launch wave passes: shrink the fitted s
 FLOOR_S = 0.35  # minimum logit spread (synthetic backtest is idealised, so not tuned tighter)
 EXTRA_S = 0.30  # logit spread per unit of ln((1+h_target)/(1+h_last))
 RESID_MULT = 2.0
-PRIOR_SHIFT, PRIOR_S = -1.0, 1.3  # with <3 pages: median logit drop for the next refresh, and its spread
+# with <3 pages: median logit drop for the next refresh by tier (new players have done little, so the hardest trophies
+# fall furthest; guesses, no refreshed data to fit), and its spread
+PRIOR_SHIFT = {"platinum": -1.6, "gold": -1.3, "silver": -1.15, "bronze": -1.0}
+PRIOR_S = 1.3
 
 
 def hours(iso: str) -> float:
@@ -76,7 +79,7 @@ def forecast_case(case: dict) -> dict:
     if len(pg) < 3:
         for i, t in enumerate(case["trophies"]):
             r = last["rates"][i] if last["rates"][i] is not None else 0.0
-            shift = PRIOR_SHIFT if r < 99.5 else -0.2
+            shift = PRIOR_SHIFT[t["tier"]] if r < 99.5 else -0.2
             s = PRIOR_S if r < 99.5 else 0.5
             rows.append((t["id"], [expit(logit(r) + shift + z * s) for z in Z]))
         return rows_out(rows)
